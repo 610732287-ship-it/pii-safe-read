@@ -40,25 +40,26 @@ python scripts/gen_safe_list.py --schema 路径/到/schema.json --title 表名 -
 ```
 
 将 `--schema` 后的路径替换为真实的 schema.json 文件绝对路径，`--title` 替换为表名。脚本读取
-`references/pii_rules.json`（技能目录下）的规则，输出三类清单：
+`references/pii_rules.json`（技能目录下）的规则，输出两类清单：
 
 - **PII 列黑名单**（永不读取、绝不显示明文）
-- **需人工确认列**（备注类等自由文本，值里可能夹带 PII）
-- **安全列**（可正常读取）
+- **安全列**（可正常读取 —— 未被黑名单命中的字段一律放行）
+
+> 本技能采用**最小化黑名单**：默认只拦 10 个关键词（见 `pii_rules.json`），其余字段全部放行。
+> 这样能最大限度避免误杀业务字段，代价是需要你按自己的表确认黑名单是否够用。
 
 ### 3. 抽查并校准规则（换表必做）
 
-打开清单，确认分类贴合本表字段名。新表可能有当前关键词未覆盖的列名——编辑 `references/pii_rules.json`
-（增删 `pii_kw` / `allow_kw` / `review_kw`，子串匹配、大小写不敏感），重跑脚本即可。
-常见校准：状态字段（如实为「是/否」的「是否 xxx」「xxx 审核」）加入 `allow_kw` 放行；
-证书编号、学号、民族等准标识符加入 `pii_kw` 从严。
+打开清单，确认分类贴合本表字段名。若你的表里有黑名单未覆盖的敏感列名——编辑 `references/pii_rules.json`
+（往 `pii_kw` 增删关键词，子串匹配、大小写不敏感），重跑脚本即可。
+常见需追加的准标识符：学号、准考证号、工号、民族、证书编号等。
+若某列名含敏感词但值实为状态（是/否），把它加进 `allow_kw` 放行——该名单优先于 `pii_kw`。
 
 ### 4. 按清单安全读取数据
 
 - ✅ 用 `records_list` / `list_records`，传 `fields` = 清单「安全列」的字段ID（`prefer_id=true`）。
   数据源只返回这些列，PII 列从请求到响应全程不参与。
 - ❌ **禁用 `get_range_data`**：它返回矩形选区所有列，会连带取出 PII 列并上传。
-- ⚠️ 需人工确认列默认不读，除非确认其值不含手机号/身份证。
 - 🔒 输出时仍默认对残留 PII 脱敏（双保险），但根本防护在「不取」这一环。
 
 ### 5. 历史已上传 PII 的补救
@@ -69,7 +70,7 @@ python scripts/gen_safe_list.py --schema 路径/到/schema.json --title 表名 -
 ## Bundled resources
 
 - `scripts/gen_safe_list.py` — 配置驱动的清单生成器（读 schema + `pii_rules.json` → 输出 .md）。
-- `references/pii_rules.json` — 可编辑的 PII 识别规则（团队内共享同一套判定）。
+- `references/pii_rules.json` — 可编辑的 PII 识别规则（**最小化黑名单**：默认拦 10 个关键词，其余全放行）。
 - `references/workflow.md` — 完整工作流、读取操作规范、历史 PII 擦除步骤与边界说明。
 
 ## Boundaries（必须如实告知用户）

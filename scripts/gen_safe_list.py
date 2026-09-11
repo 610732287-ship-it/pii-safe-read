@@ -34,13 +34,14 @@ def load_rules():
 
 def classify(name, rules):
     low = (name or "").lower()
-    # allow_kw 优先于 pii_kw: 命中则放行(用于实为状态/布尔字段, 如「是否添加微信」)
+    # allow_kw 优先于 pii_kw: 命中则放行(用于实为状态/布尔字段, 如「是否 xxx」)
     for k in rules.get("allow_kw", []):
         if k and k in low:
             return "SAFE"
     for k in rules.get("pii_kw", []):
         if k and k in low:
             return "PII"
+    # review_kw 默认为空(最小化黑名单); 同事可按需启用
     for k in rules.get("review_kw", []):
         if k and k in low:
             return "REVIEW"
@@ -64,15 +65,23 @@ def build_checklist(sheets, rules, title):
     L = []
     L.append(f"# 安全读取清单 ——《{title}》\n")
     L.append("> 数据来源：dbsheet.get_schema（仅字段结构，不含任何行数据，零 PII 值上传）\n")
-    L.append("> **用途**：处理此表时，仅读取「安全列」；「PII 列」永不读取/不显示明文；「需人工确认列」读取前先确认不含敏感值。\n")
+    L.append("> **用途**：处理此表时，仅读取「安全列」；「PII 列」永不读取/不显示明文。\n")
     L.append("")
-    L.append("> **🔒 读取操作规范（确保 PII 不碰 WorkBuddy 服务器）**：\n")
+    L.append("> **🔒 读取操作规范（确保 PII 不碰服务端）**：\n")
     L.append("> - 必须用 `records_list` / `list_records` 并传 `fields` = 本清单「安全列」的字段ID（`prefer_id=true`），从源头只取安全列。\n")
     L.append("> - **禁止使用 `get_range_data`**（它返回矩形选区内所有列，会连带取出 PII 列并上传）。\n")
-    L.append("> - 「需人工确认列」（备注类等）默认不读取，除非确认其值不含手机号/身份证。\n")
-    L.append("> - PII 列从请求到响应全程不参与，故其值不会经过 WorkBuddy 服务端（仅安全列的业务数据仍经云端连接器中转，此乃使用云端工具的固有代价）。\n")
+    L.append("> - PII 列从请求到响应全程不参与，故其值不会经过服务端（仅安全列的业务数据仍经云端连接器中转，此乃使用云端工具的固有代价）。\n")
     L.append("> - 本规范仅防「未来」上传；历史会话已上传的 PII 不在此列，需平台方擦除（见 references/workflow.md）。\n")
     L.append("")
+
+    # 先统计 review 数量，决定章节编号
+    review_fields = []
+    for s in sheets:
+        sname = s.get("name", "?")
+        for f in s.get("fields", []):
+            if classify(f.get("name", ""), rules) == "REVIEW":
+                review_fields.append((sname, f.get("id", ""), f.get("name", ""), f.get("type", "")))
+    review = len(review_fields)
 
     L.append("## 一、PII 列黑名单（永不读取，绝不显示明文）\n")
     L.append("| 子表 | 字段ID | 字段名 | 类型 |")
@@ -86,22 +95,22 @@ def build_checklist(sheets, rules, title):
                 pii += 1
                 L.append(f"| {sname} | {f.get('id','')} | {nm} | {f.get('type','')} |")
     L.append("")
-    L.append(f"> 共 **{pii}** 个 PII 列（跨 {len(sheets)} 张子表）。\n")
+    L.append(f"> 共 **{pii}** 个 PII 列（跨 {len(sheets)} 张子表）。未被黑名单命中的字段一律放行。\n")
 
-    L.append("## 二、需人工确认列（自由文本，值里可能夹带手机号/身份证，读取前先确认）\n")
-    L.append("| 子表 | 字段ID | 字段名 | 类型 |")
-    L.append("|---|---|---|---|")
-    for s in sheets:
-        sname = s.get("name", "?")
-        for f in s.get("fields", []):
-            nm = f.get("name", "")
-            if classify(nm, rules) == "REVIEW":
-                review += 1
-                L.append(f"| {sname} | {f.get('id','')} | {nm} | {f.get('type','')} |")
-    L.append("")
-    L.append(f"> 共 **{review}** 个需人工确认列。\n")
+    # review_kw 为空时跳过该节，后续章节编号自动前移
+    sec = 2
+    if review:
+        L.append(f"## {'二三四'[sec-2]}、需人工确认列（自由文本，值里可能夹带手机号/身份证，读取前先确认）\n")
+        L.append("| 子表 | 字段ID | 字段名 | 类型 |")
+        L.append("|---|---|---|---|")
+        for sname, fid, nm, typ in review_fields:
+            L.append(f"| {sname} | {fid} | {nm} | {typ} |")
+        L.append("")
+        L.append(f"> 共 **{review}** 个需人工确认列。\n")
+        sec += 1
 
-    L.append("## 三、各子表安全列（可正常读取）\n")
+    num = "一二三四"[sec - 1]
+    L.append(f"## {num}、各子表安全列（可正常读取）\n")
     for s in sheets:
         sname = s.get("name", "?")
         fields = s.get("fields", [])
@@ -114,12 +123,13 @@ def build_checklist(sheets, rules, title):
             L.append(f"| {fid} | {nm} | {typ} |")
         L.append("")
 
-    L.append("## 四、统计\n")
+    L.append(f"## {'一二三四五'[sec]}、统计\n")
     L.append(f"- 子表总数：{len(sheets)}")
     L.append(f"- 字段总数：{total}")
     L.append(f"- 安全列：{safe}")
     L.append(f"- PII 列（禁读）：{pii}")
-    L.append(f"- 需人工确认列：{review}")
+    if review:
+        L.append(f"- 需人工确认列：{review}")
     return "\n".join(L), dict(total=total, pii=pii, review=review, safe=safe, sheets=len(sheets))
 
 
