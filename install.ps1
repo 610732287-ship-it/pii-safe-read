@@ -1,10 +1,10 @@
 # pii-safe-read installer
 # Usage (PowerShell):
-#   irm https://raw.githubusercontent.com/USERNAME/REPO/main/install.ps1 | iex
+#   irm https://raw.githubusercontent.com/610732287-ship-it/pii-safe-read/main/install.ps1 | iex
 
 $ErrorActionPreference = "Stop"
 
-$Base = "https://raw.githubusercontent.com/USERNAME/REPO/main"
+$Base = "https://raw.githubusercontent.com/610732287-ship-it/pii-safe-read/main"
 $SkillName = "pii-safe-read"
 
 $id = $env:__CFBundleIdentifier

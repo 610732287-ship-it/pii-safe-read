@@ -24,24 +24,24 @@
 
 > 请帮我安装一个 skill，执行这条命令，装完后确认 `pii-safe-read/SKILL.md` 存在：
 > ```
-> curl -fsSL https://raw.githubusercontent.com/USERNAME/REPO/main/install.sh | bash
+> curl -fsSL https://raw.githubusercontent.com/610732287-ship-it/pii-safe-read/main/install.sh | bash
 > ```
 
 > Windows 上把上面那条换成 PowerShell 版：
 > ```
-> irm https://raw.githubusercontent.com/USERNAME/REPO/main/install.ps1 | iex
+> irm https://raw.githubusercontent.com/610732287-ship-it/pii-safe-read/main/install.ps1 | iex
 > ```
 
 ### 方式 B：自己跑一行命令
 
 ```bash
 # macOS / Linux / Git Bash
-curl -fsSL https://raw.githubusercontent.com/USERNAME/REPO/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/610732287-ship-it/pii-safe-read/main/install.sh | bash
 ```
 
 ```powershell
 # Windows PowerShell
-irm https://raw.githubusercontent.com/USERNAME/REPO/main/install.ps1 | iex
+irm https://raw.githubusercontent.com/610732287-ship-it/pii-safe-read/main/install.ps1 | iex
 ```
 
 ### 方式 C：手动复制

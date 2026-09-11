@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # pii-safe-read installer
 # Usage:
-#   curl -fsSL https://raw.githubusercontent.com/USERNAME/REPO/main/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/610732287-ship-it/pii-safe-read/main/install.sh | bash
 set -euo pipefail
 
-BASE="${BASE_URL:-https://raw.githubusercontent.com/USERNAME/REPO/main}"
+BASE="${BASE_URL:-https://raw.githubusercontent.com/610732287-ship-it/pii-safe-read/main}"
 SKILL_NAME="pii-safe-read"
 
 # Detect target client: CodeBuddy vs WorkBuddy
