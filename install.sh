@@ -21,8 +21,14 @@ fi
 TARGET="$SKILLS_DIR/$SKILL_NAME"
 mkdir -p "$TARGET/references" "$TARGET/scripts"
 
+# NOTE: cd into the target dir and download with RELATIVE paths.
+# On Windows Git Bash the curl on PATH may be a native exe that cannot
+# write to MSYS-style absolute paths (fails with "curl: (23) ERROR on write").
+# Relative paths work with both MSYS curl and native curl.exe.
+cd "$TARGET"
+
 for f in "SKILL.md" "references/pii_rules.json" "references/workflow.md" "scripts/gen_safe_list.py"; do
-  curl -fsSL -o "$TARGET/$f" "$BASE/$f"
+  curl -fsSL -o "$f" "$BASE/$f"
 done
 
 echo "Installed: $TARGET"
