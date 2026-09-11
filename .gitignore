@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
+安全读取清单.md
+*.schema.json
+tool-results/
